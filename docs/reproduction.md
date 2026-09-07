@@ -8,7 +8,9 @@
 - 校准 split：`train`
 - 校准数量：200，seed 42
 
-当前数据核验结果：NDJSON 有 18,724 条 train 和 7,953 条 val 图像记录；`images/train` 存在，NDJSON 引用的 26,677 张图片均存在且非空。
+当前数据核验结果：NDJSON 有 18,724 条 train 和 7,953 条 val 图像记录；
+`images/train` 存在，NDJSON 引用的 26,677 张图片均存在且非空。运行时会再次
+检查 split 目录、记录数量以及抽样前所有引用图片是否存在且非空。
 
 ## 执行
 
@@ -23,12 +25,15 @@ cd /home/mokuroo/documents/python/pt2pte_toolchain
 ```bash
 export EXECUTORCH_ROOT=/home/mokuroo/documents/python/cat_dog_torch/third_party/executorch
 export PT2PTE_CMSIS_NN_PATH=/home/mokuroo/documents/python/cat_dog_torch/cmake-out-cmsis/backends/cortex_m/cmsis_nn-build
+export PT2PTE_PYTHON=/home/mokuroo/documents/python/cat_dog_torch/.venv-executorch/bin/python
+export PYTHONPATH=/home/mokuroo/documents/python/yolo_hand/.venv/lib/python3.12/site-packages
 ./scripts/export_pte.sh configs/yolo_hand_pose.yaml
 ```
 
 ## 配置语义
 
-`model.input_size: null` 会从 YOLO checkpoint 元数据读取尺寸，不在 adapter 中固定 224。显式传入尺寸时支持：
+`model.input_size: null` 会从 YOLO checkpoint 元数据读取尺寸，不在 adapter 中
+固定 224。本 checkpoint 的元数据解析结果是 `224x224`。显式传入尺寸时支持：
 
 ```yaml
 input_size: 320
@@ -40,7 +45,8 @@ input_size: 320
 input_size: [256, 320]
 ```
 
-尺寸必须为模型最大 stride 的整数倍。
+尺寸必须为模型最大 stride 的整数倍；尺寸改变时，候选数 `N` 和四路输出的
+最后一维也会随特征图尺寸改变，不应在部署侧硬编码 `1029`。
 
 当前目标参数：
 
@@ -70,6 +76,17 @@ outputs[3]  keypoint_scores [1, 21, N]
 值。部署侧不能继续把第 4 个属性当作单一 `[1,68,N]` 输出中的 confidence，
 而应读取 `outputs[1]`。
 
+## Debug 导出
+
+需要查看 delegation 和 Vela 中间结果时运行：
+
+```bash
+./scripts/export_pte.sh configs/yolo_hand_pose_debug.yaml
+```
+
+该配置只增加导出诊断参数，不执行 FVP smoketest；产物写入
+`output/yolo_intermediates/`。普通复现的交付产物写入 `artifacts/yolo_hand_pose/`。
+
 ## 产物
 
 ```text
@@ -84,3 +101,4 @@ artifacts/yolo_hand_pose/
 ```
 
 报告记录路径、文件大小、输入输出形状、量化误差和 delegate 数量，不计算文件摘要。
+指标解释见 [docs/pt2pte_report.md](pt2pte_report.md)。

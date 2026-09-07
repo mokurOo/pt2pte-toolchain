@@ -1,0 +1,45 @@
+# Python bytecode and test/tool caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Local Python environments and packaging output
+.venv/
+.venv-*/
+venv/
+env/
+ENV/
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Locally cloned/build dependencies
+third_party/
+
+# Generated PT2E / ExecuTorch / Vela outputs
+artifacts/
+output/
+*.pte
+*.tosa
+*.npz
+*.xml
+*.log
+
+# Checkpoints and exported model files; keep weights outside this repository
+*.pt
+*.pth
+*.onnx
+
+# Editor and OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+*.swp

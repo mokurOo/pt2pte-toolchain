@@ -1,21 +1,35 @@
-已按优先方案修复 `pt2pte_toolchain`。
+# YOLO pose PTE 部署诊断
 
-主要改动：
+## 历史问题
 
-- 在 Ultralytics Pose head 最终拼接前拆分输出，避免共享量化 scale。
-- PTE 输出改为四路：
+旧版 adapter 将 Ultralytics Pose head 输出拼成单一的 `[1, 68, N]` 张量。
+框坐标范围约为 0 到 250，而 confidence 和关键点 score 范围为 0 到 1；
+Arm 量化器在最终 `slice`/`split`/`getitem` 路径上共享 qspec，导致 score
+被坐标范围的量化 scale 压成 0。
+
+仅在最终张量后切片不能解决该问题。
+
+## 当前输出契约
+
+当前 adapter 在 Pose head 最终拼接前返回四个独立输出：
 
 ```text
-outputs[0] boxes          [1, 4, 1029]
-outputs[1] confidence     [1, 1, 1029]
-outputs[2] keypoint_xy    [1, 42, 1029]
-outputs[3] keypoint_scores [1, 21, 1029]
+outputs[0]  boxes          [1, 4, N]
+outputs[1]  confidence     [1, 1, N]
+outputs[2]  keypoint_xy    [1, 42, N]
+outputs[3]  keypoint_scores [1, 21, N]
 ```
 
-- `confidence` 和 `keypoint_scores` 已包含 sigmoid。
-- 校准目录确认存在，共 26677 张图片，实际使用 200 张。
-- 重新生成普通版和 debug 版 U85 PTE。
-- debug lowered graph 中四路量化 scale 已独立：
+`confidence` 和 `keypoint_scores` 已经完成 sigmoid。部署侧不能继续按单一
+`[1,68,N]` tensor 读取，也不应再次 sigmoid；hand confidence 应读取
+`outputs[1]`。
+
+当前 checkpoint 使用 `224x224` 输入时 `N=1029`，但 `N` 会随输入尺寸变化，
+不能在通用部署代码中固定。
+
+## 当前验证
+
+debug lowered graph 的四路 output scale 已独立，约为：
 
 ```text
 boxes           1.6865
@@ -24,19 +38,6 @@ keypoint_xy     3.0975
 keypoint_scores 0.003919
 ```
 
-验证结果：
-
-```text
-17 passed
-delegate 子图: 1
-PTE 已成功生成
-```
-
-产物：
-
-- [yolo_hand_pose_ethos_u85_256.pte](/home/mokuroo/documents/python/pt2pte_toolchain/artifacts/yolo_hand_pose/yolo_hand_pose_ethos_u85_256.pte)
-- [export_report.json](/home/mokuroo/documents/python/pt2pte_toolchain/artifacts/yolo_hand_pose/export_report.json)
-- [debug_pte.md](/home/mokuroo/documents/python/pt2pte_toolchain/docs/debug_pte.md)
-- [adapters.py](/home/mokuroo/documents/python/pt2pte_toolchain/src/pt2pte/adapters.py:87)
-
-注意：部署侧必须从原来的单一 `[1,68,1029]` 输出解析，改为读取四个输出；旧 parser 不能直接使用新的 PTE。
+这说明 score 分支不再复用框坐标的量化范围。更完整的流程、指标和解析见
+[pt2pte_report.md](pt2pte_report.md)。本工具链只生成 PTE 和诊断文件，不修改
+FVP runner。
