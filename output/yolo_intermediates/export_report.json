@@ -1,0 +1,142 @@
+{
+  "model": {
+    "adapter": "ultralytics_yolo",
+    "weights": "/home/mokuroo/documents/python/yolo_hand/results/runs/yolo_hand_pose_224/checkpoints/best.pt",
+    "input_size": [
+      224,
+      224
+    ],
+    "task": "pose",
+    "stride": 32,
+    "num_classes": 1,
+    "keypoint_shape": [
+      21,
+      3
+    ],
+    "source_output_shape": [
+      1,
+      68,
+      1029
+    ],
+    "output_names": [
+      "boxes",
+      "confidence",
+      "keypoint_xy",
+      "keypoint_scores"
+    ],
+    "output_shapes": [
+      [
+        1,
+        4,
+        1029
+      ],
+      [
+        1,
+        1,
+        1029
+      ],
+      [
+        1,
+        42,
+        1029
+      ],
+      [
+        1,
+        21,
+        1029
+      ]
+    ]
+  },
+  "target": {
+    "accelerator": "ethos-u85-256",
+    "system_config": "Ethos_U85_SYS_DRAM_Mid",
+    "memory_mode": "Shared_Sram",
+    "vela_extra_flags": [
+      "--optimise=Performance",
+      "--arena-cache-size=4194304",
+      "--enable-debug-db",
+      "--show-cpu-operations",
+      "--verbose-operators",
+      "--verbose-cycle-estimate"
+    ]
+  },
+  "calibration": {
+    "manifest": "/home/mokuroo/documents/python/pt2pte_toolchain/output/yolo_intermediates/calibration_manifest.json",
+    "count": 200
+  },
+  "outputs": {
+    "names": [
+      "boxes",
+      "confidence",
+      "keypoint_xy",
+      "keypoint_scores"
+    ],
+    "expected_shapes": [
+      [
+        1,
+        4,
+        1029
+      ],
+      [
+        1,
+        1,
+        1029
+      ],
+      [
+        1,
+        42,
+        1029
+      ],
+      [
+        1,
+        21,
+        1029
+      ]
+    ],
+    "actual_shapes": [
+      [
+        1,
+        4,
+        1029
+      ],
+      [
+        1,
+        1,
+        1029
+      ],
+      [
+        1,
+        42,
+        1029
+      ],
+      [
+        1,
+        21,
+        1029
+      ]
+    ],
+    "per_output_max_abs_error": {
+      "boxes": 95.5675048828125,
+      "confidence": 0.00033480674028396606,
+      "keypoint_xy": 78.94987487792969,
+      "keypoint_scores": 0.5508014559745789
+    },
+    "max_abs_error": 95.5675048828125,
+    "eager_shape": null,
+    "quantized_shape": null
+  },
+  "lowering": {
+    "delegate_calls": 1,
+    "delegation_info": "/home/mokuroo/documents/python/pt2pte_toolchain/output/yolo_intermediates/delegation_info.txt",
+    "delegated_nodes": 845,
+    "non_delegated_nodes": 9,
+    "delegated_subgraphs": 1,
+    "graph": "/home/mokuroo/documents/python/pt2pte_toolchain/output/yolo_intermediates/lowered_graph.txt",
+    "log": "/home/mokuroo/documents/python/pt2pte_toolchain/output/yolo_intermediates/lowering.log",
+    "intermediate": "/home/mokuroo/documents/python/pt2pte_toolchain/output/yolo_intermediates/intermediate"
+  },
+  "pte": {
+    "path": "/home/mokuroo/documents/python/pt2pte_toolchain/output/yolo_intermediates/yolo_hand_pose_debug_ethos_u85_256.pte",
+    "bytes": 3354112
+  }
+}

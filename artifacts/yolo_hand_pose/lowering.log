@@ -1,0 +1,37 @@
+/usr/lib/python3.12/copyreg.py:99: FutureWarning: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+  return cls.__new__(cls, *args)
+/usr/lib/python3.12/copyreg.py:99: FutureWarning: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+  return cls.__new__(cls, *args)
+/usr/lib/python3.12/copyreg.py:99: FutureWarning: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+  return cls.__new__(cls, *args)
+
+Network summary for out
+Accelerator configuration               Ethos_U85_256
+System configuration             Ethos_U85_SYS_DRAM_Mid
+Memory mode                               Shared_Sram
+Accelerator clock                                1000 MHz
+Design peak SRAM bandwidth                      29.80 GB/s
+Design peak DRAM bandwidth                      11.18 GB/s
+
+Total SRAM used                                597.84 KiB
+Total DRAM used                               3249.64 KiB
+
+CPU operators = 0 (0.0%)
+NPU operators = 131 (100.0%)
+
+Average SRAM bandwidth                           9.85 GB/s
+Input   SRAM bandwidth                          44.50 MB/batch
+Weight  SRAM bandwidth                           6.46 MB/batch
+Output  SRAM bandwidth                           4.81 MB/batch
+Total   SRAM bandwidth                          56.07 MB/batch
+Total   SRAM bandwidth            per input     56.07 MB/inference (batch size 1)
+
+Average DRAM bandwidth                           0.63 GB/s
+Input   DRAM bandwidth                           0.01 MB/batch
+Weight  DRAM bandwidth                           3.54 MB/batch
+Output  DRAM bandwidth                           0.00 MB/batch
+Total   DRAM bandwidth                           3.59 MB/batch
+Total   DRAM bandwidth            per input      3.59 MB/inference (batch size 1)
+
+Neural network macs                         587194440 MACs/batch
+

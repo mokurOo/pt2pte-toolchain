@@ -1,0 +1,25 @@
+model:
+  adapter: torchvision_mobilenet_v2
+  weights: ../../cat_dog_torch/artifacts/checkpoints/mobilenetv2_catdog_best.pt
+  input_size: 224
+  num_classes: 2
+
+calibration:
+  provider: image_directory
+  images_root: ../../cat_dog_torch/dataset
+  split: train
+  count: 200
+  seed: 42
+
+target:
+  accelerator: ethos-u85-256
+  system_config: Ethos_U85_SYS_DRAM_Mid
+  memory_mode: Shared_Sram
+  vela_extra_flags:
+    - --optimise=Performance
+    - --arena-cache-size=4194304
+
+output:
+  directory: ../artifacts/mobilenet_v2
+  name: mobilenet_v2
+  save_intermediates: true

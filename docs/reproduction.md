@@ -1,0 +1,86 @@
+# 从 best.pt 复现 YOLO Hand Pose PTE
+
+## 输入
+
+- checkpoint：`../yolo_hand/results/runs/yolo_hand_pose_224/checkpoints/best.pt`
+- NDJSON：`../yolo_hand/hand-keypoints.ndjson`
+- 图片根目录：`../yolo_hand/datasets/hand_pose/images`
+- 校准 split：`train`
+- 校准数量：200，seed 42
+
+当前数据核验结果：NDJSON 有 18,724 条 train 和 7,953 条 val 图像记录；`images/train` 存在，NDJSON 引用的 26,677 张图片均存在且非空。
+
+## 执行
+
+```bash
+cd /home/mokuroo/documents/python/pt2pte_toolchain
+./scripts/bootstrap.sh
+./scripts/reproduce_yolo_hand.sh
+```
+
+也可以在已有兼容环境中运行：
+
+```bash
+export EXECUTORCH_ROOT=/home/mokuroo/documents/python/cat_dog_torch/third_party/executorch
+export PT2PTE_CMSIS_NN_PATH=/home/mokuroo/documents/python/cat_dog_torch/cmake-out-cmsis/backends/cortex_m/cmsis_nn-build
+./scripts/export_pte.sh configs/yolo_hand_pose.yaml
+```
+
+## 配置语义
+
+`model.input_size: null` 会从 YOLO checkpoint 元数据读取尺寸，不在 adapter 中固定 224。显式传入尺寸时支持：
+
+```yaml
+input_size: 320
+```
+
+或：
+
+```yaml
+input_size: [256, 320]
+```
+
+尺寸必须为模型最大 stride 的整数倍。
+
+当前目标参数：
+
+```yaml
+accelerator: ethos-u85-256
+system_config: Ethos_U85_SYS_DRAM_Mid
+memory_mode: Shared_Sram
+vela_extra_flags:
+  - --optimise=Performance
+  - --arena-cache-size=4194304
+```
+
+## 输出契约
+
+Pose adapter 会在 Ultralytics head 的最终拼接之前拆出独立分支，PTE 的
+`forward` 返回四个输出：
+
+```text
+outputs[0]  boxes          [1, 4, N]
+outputs[1]  confidence     [1, 1, N]
+outputs[2]  keypoint_xy    [1, 42, N]
+outputs[3]  keypoint_scores [1, 21, N]
+```
+
+当前 checkpoint 在 `224x224` 输入下 `N=1029`。坐标和分数的量化参数由
+各自分支独立统计；`confidence` 与 `keypoint_scores` 已经是 sigmoid 后的
+值。部署侧不能继续把第 4 个属性当作单一 `[1,68,N]` 输出中的 confidence，
+而应读取 `outputs[1]`。
+
+## 产物
+
+```text
+artifacts/yolo_hand_pose/
+├── yolo_hand_pose_ethos_u85_256.pte
+├── export_report.json
+├── calibration_manifest.json
+├── delegation_info.txt
+├── lowered_graph.txt
+├── lowering.log
+└── intermediate/
+```
+
+报告记录路径、文件大小、输入输出形状、量化误差和 delegate 数量，不计算文件摘要。

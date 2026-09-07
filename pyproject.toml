@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pt2pte-toolchain"
+version = "0.1.0"
+description = "Config-driven PyTorch to ExecuTorch Ethos-U PTE toolchain"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "numpy>=2.0",
+  "Pillow>=10",
+  "PyYAML>=6",
+  "torch",
+  "torchvision",
+  "ultralytics==8.4.129",
+]
+
+[project.scripts]
+pt2pte = "pt2pte.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-p no:rerunfailures"
+testpaths = ["tests"]
