@@ -79,3 +79,38 @@ output:
         assert "count" in str(error)
     else:
         raise AssertionError("zero calibration count must be rejected")
+
+
+def test_load_config_accepts_cli_overrides(tmp_path):
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        yaml.safe_dump(
+            {
+                "model": {
+                    "adapter": "ultralytics_yolo",
+                    "weights": "original.pt",
+                },
+                "calibration": {
+                    "provider": "image_folder",
+                    "images_root": "images",
+                    "count": 1,
+                },
+                "target": {
+                    "accelerator": "ethos-u85-256",
+                    "system_config": "Ethos_U85_SYS_DRAM_Mid",
+                },
+                "output": {"directory": "artifacts", "name": "model"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    override_weights = tmp_path / "other.pt"
+
+    loaded = config_module.load_config(
+        config_path,
+        weights=override_weights,
+        accelerator="ethos-u85-512",
+    )
+
+    assert loaded.model.weights == override_weights.resolve()
+    assert loaded.target.accelerator == "ethos-u85-512"

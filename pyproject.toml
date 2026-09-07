@@ -11,7 +11,7 @@ dependencies = [
   "numpy>=2.0",
   "Pillow>=10",
   "PyYAML>=6",
-  "torch",
+  "torch>=2.13,<2.14",
   "torchvision",
   "ultralytics==8.4.129",
 ]

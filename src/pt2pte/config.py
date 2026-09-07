@@ -75,7 +75,12 @@ def _input_size(value: Any) -> int | tuple[int, int] | None:
     raise ValueError("model.input_size must be null, an integer, or [height, width]")
 
 
-def load_config(path: str | Path) -> ToolkitConfig:
+def load_config(
+    path: str | Path,
+    *,
+    weights: str | Path | None = None,
+    accelerator: str | None = None,
+) -> ToolkitConfig:
     config_path = Path(path).expanduser().resolve()
     if not config_path.is_file():
         raise FileNotFoundError(f"configuration file does not exist: {config_path}")
@@ -94,10 +99,17 @@ def load_config(path: str | Path) -> ToolkitConfig:
     if count <= 0:
         raise ValueError("calibration.count must be greater than zero")
 
+    resolved_weights = _path(base, model["weights"])
+    if weights is not None:
+        override_weights = Path(weights).expanduser()
+        resolved_weights = override_weights.resolve()
+    if resolved_weights is None:
+        raise ValueError("model.weights must be provided")
+
     return ToolkitConfig(
         model=ModelConfig(
             adapter=str(model["adapter"]),
-            weights=_path(base, model["weights"]),  # type: ignore[arg-type]
+            weights=resolved_weights,
             input_size=_input_size(model.get("input_size")),
             architecture=model.get("architecture"),
             num_classes=(int(model["num_classes"]) if model.get("num_classes") is not None else None),
@@ -111,7 +123,7 @@ def load_config(path: str | Path) -> ToolkitConfig:
             seed=int(calibration.get("seed", 42)),
         ),
         target=TargetConfig(
-            accelerator=str(target["accelerator"]),
+            accelerator=str(accelerator if accelerator is not None else target["accelerator"]),
             system_config=str(target["system_config"]),
             memory_mode=str(target.get("memory_mode", "Sram_Only")),
             vela_ini=_path(base, target.get("vela_ini")),

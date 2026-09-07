@@ -247,7 +247,11 @@ def export_pte(config: ToolkitConfig) -> Path:
 
     quantizer = EthosUQuantizer(compile_spec)
     quantizer.set_global(get_symmetric_quantization_config(is_per_channel=True))
-    prepared = prepare_pt2e(exported.module(), quantizer)
+    # Arm's PT2E passes do not accept a call_module node for ExportedProgram's
+    # runtime input guards. Disable those guards explicitly instead of relying
+    # on PyTorch's call-stack/path heuristic, which makes behavior depend on
+    # the virtual-environment directory name.
+    prepared = prepare_pt2e(exported.module(check_guards=False), quantizer)
     with torch.inference_mode():
         for image_path in calibration_paths:
             prepared(loaded.preprocess(image_path))

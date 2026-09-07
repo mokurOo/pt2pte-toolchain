@@ -16,9 +16,39 @@
 
 ```bash
 cd /home/mokuroo/documents/python/pt2pte_toolchain
-./scripts/bootstrap.sh
+./scripts/bootstrap.sh --device cpu
 ./scripts/reproduce_yolo_hand.sh
 ```
+
+复现脚本支持直接覆盖 checkpoint 和目标型号，不需要修改 YAML：
+
+```bash
+./scripts/reproduce_yolo_hand.sh \
+  --weights /absolute/path/to/best.pt \
+  --target ethos-u85-256
+```
+
+也可以指定另一份配置：
+
+```bash
+./scripts/reproduce_yolo_hand.sh \
+  --config configs/yolo_hand_pose_debug.yaml \
+  --weights /absolute/path/to/best.pt \
+  --target ethos-u85-512
+```
+
+底层通用入口 `export_pte.sh` 的用法相同，配置文件放在第一个参数，后面传入
+覆盖项：
+
+```bash
+./scripts/export_pte.sh configs/yolo_hand_pose.yaml \
+  --weights /absolute/path/to/best.pt \
+  --target ethos-u85-256
+```
+
+`--weights` 覆盖 `model.weights`，`--target` 覆盖 `target.accelerator`，其余
+校准、输出和 Vela 配置继续从 YAML 读取。`model.input_size: null` 仍然表示从
+YOLO checkpoint 元数据读取尺寸，不会由复现脚本固定 `imgsz`。
 
 也可以在已有兼容环境中运行：
 
@@ -86,6 +116,12 @@ outputs[3]  keypoint_scores [1, 21, N]
 
 该配置只增加导出诊断参数，不执行 FVP smoketest；产物写入
 `output/yolo_intermediates/`。普通复现的交付产物写入 `artifacts/yolo_hand_pose/`。
+
+导出开始前会打印 `torch` 和 `torchao` 的版本及文件路径。如果看到
+`call_module _guards_fn`，优先检查 `PT2PTE_PYTHON` 与 `PYTHONPATH`：不能让
+`yolo_hand/.venv` 或其他环境中的 torch/torchao 覆盖工具链环境；外部
+`PYTHONPATH` 只用于补充 Ultralytics。重新使用 bootstrap 创建的 CPU 环境，或按
+上面的“已有兼容环境”示例设置三个路径变量。
 
 ## 产物
 

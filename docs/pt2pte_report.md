@@ -17,6 +17,25 @@ YOLO pose adapter 会在 Ultralytics Pose head 的最终拼接之前输出独立
 避免框坐标范围和 score 范围共享同一个量化 scale。MobileNetV2 则保持单一
 分类 logits 输出；两者共用后续量化、lowering 和 PTE 生成流程。
 
+运行入口：
+
+```bash
+./scripts/export_pte.sh configs/yolo_hand_pose.yaml \
+  --weights /absolute/path/to/best.pt \
+  --target ethos-u85-256
+```
+
+YOLO 快速复现也支持同样的覆盖项：
+
+```bash
+./scripts/reproduce_yolo_hand.sh \
+  --weights /absolute/path/to/best.pt \
+  --target ethos-u85-256
+```
+
+两项覆盖分别对应 `model.weights` 和 `target.accelerator`；输入尺寸仍由 YAML
+或 checkpoint 元数据决定。
+
 ## 2. 当前转换输入
 
 | 指标 | 当前值 |
