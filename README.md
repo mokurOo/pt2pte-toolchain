@@ -11,16 +11,21 @@
 
 ## 快速使用
 
-```bash
-cd /home/mokuroo/documents/python/pt2pte_toolchain
-./scripts/bootstrap.sh
-./scripts/reproduce_yolo_hand.sh
-```
-
-自定义模型或目标：
+首先在配置文件中更改模型/目标/训练集路径等信息：
 
 ```bash
 ./scripts/export_pte.sh configs/mobilenet_v2_example.yaml
+```
+
+运行环境配置脚本：
+```bash
+cd /_path_to_pt2pte_toolchain
+./scripts/bootstrap.sh
+```
+
+运行转换脚本并指定配置文件位置：
+```bash
+./scripts/export_pte.sh configs/yolo_hand_pose.yaml
 ```
 
 最终文件位置由配置的 `output.directory` 和 `output.name` 决定。当前 YOLO 默认输出：
