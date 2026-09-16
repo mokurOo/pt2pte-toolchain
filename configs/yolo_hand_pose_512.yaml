@@ -5,11 +5,9 @@ model:
   input_size: null
 
 calibration:
-  provider: yolo_ndjson
-  ndjson: ../../yolo_hand/hand-keypoints.ndjson
-  images_root: ../../yolo_hand/datasets/hand_pose/images
-  split: train
-  count: 200
+  provider: image_list
+  image_list: ../../yolo_hand/datasets/hand_pose/calibration/train_seed42_500.txt
+  count: 500
   seed: 42
 
 target:

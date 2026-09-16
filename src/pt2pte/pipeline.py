@@ -14,7 +14,7 @@ import torch
 
 from .adapters import LoadedAdapter, load_adapter
 from .artifacts import write_manifest
-from .calibration import sample_image_directory, sample_yolo_ndjson
+from .calibration import load_image_list, sample_image_directory, sample_yolo_ndjson
 from .config import ToolkitConfig
 
 
@@ -115,9 +115,15 @@ def build_compile_spec_arguments(
 
 def _calibration_paths(config: ToolkitConfig) -> list[Path]:
     calibration = config.calibration
+    if calibration.provider == "image_list":
+        if calibration.image_list is None:
+            raise ValueError("calibration.image_list is required for image_list")
+        return load_image_list(calibration.image_list, count=calibration.count)
     if calibration.provider == "yolo_ndjson":
         if calibration.ndjson is None:
             raise ValueError("calibration.ndjson is required for yolo_ndjson")
+        if calibration.images_root is None:
+            raise ValueError("calibration.images_root is required for yolo_ndjson")
         return sample_yolo_ndjson(
             calibration.ndjson,
             calibration.images_root,
@@ -126,6 +132,8 @@ def _calibration_paths(config: ToolkitConfig) -> list[Path]:
             seed=calibration.seed,
         )
     if calibration.provider == "image_directory":
+        if calibration.images_root is None:
+            raise ValueError("calibration.images_root is required for image_directory")
         return sample_image_directory(
             calibration.images_root,
             count=calibration.count,
@@ -176,6 +184,7 @@ def _load_model(config: ToolkitConfig) -> LoadedAdapter:
         model.weights,
         input_size=model.input_size,
         num_classes=model.num_classes,
+        pose_output=model.pose_output,
     )
 
 
@@ -216,6 +225,11 @@ def export_pte(config: ToolkitConfig) -> Path:
         paths.calibration_manifest,
         {
             "provider": config.calibration.provider,
+            "image_list": (
+                str(config.calibration.image_list)
+                if config.calibration.image_list is not None
+                else None
+            ),
             "split": config.calibration.split,
             "seed": config.calibration.seed,
             "count": len(calibration_paths),

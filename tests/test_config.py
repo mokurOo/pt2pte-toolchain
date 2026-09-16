@@ -21,7 +21,7 @@ def test_load_config_resolves_paths_relative_to_config_and_keeps_yolo_size_optio
                     "ndjson": "../dataset/data.ndjson",
                     "images_root": "../dataset/images",
                     "split": "train",
-                    "count": 200,
+                    "count": 500,
                     "seed": 42,
                 },
                 "target": {
@@ -41,6 +41,7 @@ def test_load_config_resolves_paths_relative_to_config_and_keeps_yolo_size_optio
     loaded = load_config(config_path)
 
     assert loaded.model.input_size is None
+    assert loaded.model.pose_output == "split"
     assert loaded.model.weights == (tmp_path / "models/best.pt").resolve()
     assert loaded.calibration.ndjson == (tmp_path / "dataset/data.ndjson").resolve()
     assert loaded.target.system_config == "Ethos_U85_SYS_DRAM_Mid"
@@ -114,3 +115,37 @@ def test_load_config_accepts_cli_overrides(tmp_path):
 
     assert loaded.model.weights == override_weights.resolve()
     assert loaded.target.accelerator == "ethos-u85-512"
+
+
+def test_load_config_accepts_shared_image_list_and_packed_pose_output(tmp_path):
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        yaml.safe_dump(
+            {
+                "model": {
+                    "adapter": "ultralytics_yolo",
+                    "weights": "best.pt",
+                    "pose_output": "packed",
+                },
+                "calibration": {
+                    "provider": "image_list",
+                    "image_list": "calibration.txt",
+                    "count": 500,
+                    "seed": 42,
+                },
+                "target": {
+                    "accelerator": "ethos-u85-1024",
+                    "system_config": "Ethos_U85_SYS_DRAM_Mid",
+                },
+                "output": {"directory": "artifacts", "name": "packed"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    loaded = config_module.load_config(config_path)
+
+    assert loaded.model.pose_output == "packed"
+    assert loaded.calibration.image_list == (tmp_path / "calibration.txt").resolve()
+    assert loaded.calibration.count == 500
+    assert loaded.calibration.images_root is None

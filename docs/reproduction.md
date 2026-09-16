@@ -3,22 +3,35 @@
 ## 输入
 
 - checkpoint：`../yolo_hand/results/runs/yolo_hand_pose_224/checkpoints/best.pt`
-- NDJSON：`../yolo_hand/hand-keypoints.ndjson`
-- 图片根目录：`../yolo_hand/datasets/hand_pose/images`
+- 校准清单：`../yolo_hand/datasets/hand_pose/calibration/train_seed42_500.txt`
 - 校准 split：`train`
-- 校准数量：200，seed 42
+- 校准数量：500，seed 42（seed 只用于首次生成清单）
 
 当前数据核验结果：NDJSON 有 18,724 条 train 和 7,953 条 val 图像记录；
-`images/train` 存在，NDJSON 引用的 26,677 张图片均存在且非空。运行时会再次
-检查 split 目录、记录数量以及抽样前所有引用图片是否存在且非空。
+`images/train` 存在，NDJSON 引用的 26,677 张图片均存在且非空。先在
+`yolo_hand` 执行 `python calibration_manifest.py`；清单生成后即为两条转换流程
+共同的输入契约，运行时会检查数量、重复项及文件是否存在，并保持清单中的顺序。
 
 ## 执行
 
 ```bash
+cd /home/mokuroo/documents/python/yolo_hand
+.venv/bin/python calibration_manifest.py
+
 cd /home/mokuroo/documents/python/pt2pte_toolchain
 ./scripts/bootstrap.sh --device cpu
 ./scripts/reproduce_yolo_hand.sh
 ```
+
+U85-1024 packed/split 对照实验使用：
+
+```bash
+./scripts/export_pte.sh configs/yolo_hand_pose_1024_split.yaml
+./scripts/export_pte.sh configs/yolo_hand_pose_1024_packed.yaml
+```
+
+两份配置仅改变 `model.pose_output` 和产物目录，checkpoint、输入尺寸、500 张
+校准图片及其顺序、目标 NPU、系统配置、内存模式和 Vela 参数保持一致。
 
 复现脚本支持直接覆盖 checkpoint 和目标型号，不需要修改 YAML：
 

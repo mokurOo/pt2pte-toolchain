@@ -1,0 +1,38 @@
+model:
+  adapter: ultralytics_yolo
+  weights: ../../yolo_hand/results/runs/yolo_hand_pose_224/checkpoints/best.pt
+  input_size: null
+  pose_output: split
+
+calibration:
+  provider: image_list
+  image_list: ../../yolo_hand/datasets/hand_pose/calibration/train_seed42_500.txt
+  count: 500
+  seed: 42
+
+target:
+  accelerator: ethos-u85-1024
+  system_config: Ethos_U85_SYS_DRAM_Mid
+  memory_mode: Dedicated_Sram
+  vela_extra_flags:
+    - --optimise=Performance
+    - --arena-cache-size=131072
+        # 日志中输出 Axi0/Axi1 映射和 memory mode
+    - --verbose-config
+
+    # 输出 allocation 表和各段 allocation peak
+    - --verbose-allocation
+
+    # 输出 NPU cycles、Total cycles、Batch Inference time
+    - --verbose-cycle-estimate
+
+    # 可选：输出每层性能/周期，并生成 out_per-layer.csv
+    - --verbose-performance
+
+output:
+  directory: ../artifacts/yolo_hand_pose_1024_split
+  name: yolo_hand_pose_dedicated_64k
+  save_intermediates: true
+
+diagnostics:
+  debug: false

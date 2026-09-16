@@ -2,6 +2,7 @@ model:
   adapter: ultralytics_yolo
   weights: ../../yolo_hand/results/runs/yolo_hand_pose_224/checkpoints/best.pt
   input_size: null
+  pose_output: packed
 
 calibration:
   provider: image_list
@@ -10,21 +11,17 @@ calibration:
   seed: 42
 
 target:
-  accelerator: ethos-u85-256
+  accelerator: ethos-u85-1024
   system_config: Ethos_U85_SYS_DRAM_Mid
   memory_mode: Shared_Sram
   vela_extra_flags:
     - --optimise=Performance
     - --arena-cache-size=4194304
-    - --enable-debug-db
-    - --show-cpu-operations
-    - --verbose-operators
-    - --verbose-cycle-estimate
 
 output:
-  directory: ../output/yolo_intermediates
-  name: yolo_hand_pose_debug
+  directory: ../artifacts/yolo_hand_pose_1024_packed
+  name: yolo_hand_pose_packed
   save_intermediates: true
 
 diagnostics:
-  debug: true
+  debug: false

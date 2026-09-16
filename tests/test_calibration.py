@@ -63,3 +63,32 @@ def test_sample_yolo_ndjson_rejects_missing_referenced_image(tmp_path):
         assert "b.jpg" in str(error) or "c.jpg" in str(error)
     else:
         raise AssertionError("missing NDJSON image must be rejected")
+
+
+def test_load_image_list_resolves_relative_paths_and_preserves_order(tmp_path):
+    images = tmp_path / "images"
+    images.mkdir()
+    for name in ("b.jpg", "a.jpg"):
+        (images / name).write_bytes(b"image")
+    image_list = tmp_path / "calibration.txt"
+    image_list.write_text("./images/b.jpg\n./images/a.jpg\n", encoding="utf-8")
+
+    load_image_list = getattr(calibration_module, "load_image_list", None)
+    assert callable(load_image_list)
+    loaded = load_image_list(image_list, count=2)
+
+    assert loaded == [(images / "b.jpg").resolve(), (images / "a.jpg").resolve()]
+
+
+def test_load_image_list_requires_exact_count(tmp_path):
+    image = tmp_path / "image.jpg"
+    image.write_bytes(b"image")
+    image_list = tmp_path / "calibration.txt"
+    image_list.write_text("./image.jpg\n", encoding="utf-8")
+
+    try:
+        calibration_module.load_image_list(image_list, count=2)
+    except ValueError as error:
+        assert "expected 2" in str(error)
+    else:
+        raise AssertionError("image-list count mismatch must be rejected")

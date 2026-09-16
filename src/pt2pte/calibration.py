@@ -10,6 +10,32 @@ from pathlib import Path
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
 
+def load_image_list(image_list: str | Path, *, count: int) -> list[Path]:
+    """Load an explicit shared calibration list without resampling it."""
+    list_path = Path(image_list).expanduser().resolve()
+    if not list_path.is_file():
+        raise FileNotFoundError(f"calibration image list does not exist: {list_path}")
+    candidates: list[Path] = []
+    for line in list_path.read_text(encoding="utf-8").splitlines():
+        value = line.strip()
+        if not value or value.startswith("#"):
+            continue
+        candidate = Path(value).expanduser()
+        candidates.append(
+            (candidate if candidate.is_absolute() else list_path.parent / candidate).resolve()
+        )
+    if len(candidates) != count:
+        raise ValueError(
+            f"calibration image list contains {len(candidates)} images, expected {count}"
+        )
+    if len(candidates) != len(set(candidates)):
+        raise ValueError(f"calibration image list contains duplicate paths: {list_path}")
+    missing = [path for path in candidates if not path.is_file() or path.stat().st_size == 0]
+    if missing:
+        raise FileNotFoundError(f"calibration image is missing or empty: {missing[0]}")
+    return candidates
+
+
 def sample_yolo_ndjson(
     ndjson: str | Path,
     images_root: str | Path,

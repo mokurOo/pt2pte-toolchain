@@ -84,6 +84,24 @@ def test_load_yolo_adapter_derives_size_and_splits_pose_output_for_quantization(
         "keypoint_xy",
         "keypoint_scores",
     ]
+    assert loaded.metadata["pose_output"] == "split"
+
+
+def test_load_yolo_adapter_can_preserve_packed_pose_output():
+    weights = Path(
+        "/home/mokuroo/documents/python/yolo_hand/"
+        "results/runs/yolo_hand_pose_224/checkpoints/best.pt"
+    )
+    loaded = adapters_module.load_yolo_adapter(
+        weights, input_size=None, pose_output="packed"
+    )
+
+    with torch.inference_mode():
+        output = loaded.model(torch.zeros(1, 3, 224, 224))
+    assert isinstance(output, torch.Tensor)
+    assert tuple(output.shape) == (1, 68, 1029)
+    assert loaded.metadata["output_names"] == ["output"]
+    assert loaded.metadata["pose_output"] == "packed"
 
 
 def test_split_yolo_pose_output_preserves_attribute_order():

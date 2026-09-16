@@ -14,6 +14,7 @@ class ModelConfig:
     adapter: str
     weights: Path
     input_size: int | tuple[int, int] | None
+    pose_output: str = "split"
     architecture: str | None = None
     num_classes: int | None = None
 
@@ -22,7 +23,8 @@ class ModelConfig:
 class CalibrationConfig:
     provider: str
     ndjson: Path | None
-    images_root: Path
+    image_list: Path | None
+    images_root: Path | None
     split: str
     count: int
     seed: int
@@ -75,6 +77,13 @@ def _input_size(value: Any) -> int | tuple[int, int] | None:
     raise ValueError("model.input_size must be null, an integer, or [height, width]")
 
 
+def _pose_output(value: Any) -> str:
+    result = str(value if value is not None else "split").lower()
+    if result not in {"packed", "split"}:
+        raise ValueError("model.pose_output must be 'packed' or 'split'")
+    return result
+
+
 def load_config(
     path: str | Path,
     *,
@@ -111,13 +120,15 @@ def load_config(
             adapter=str(model["adapter"]),
             weights=resolved_weights,
             input_size=_input_size(model.get("input_size")),
+            pose_output=_pose_output(model.get("pose_output")),
             architecture=model.get("architecture"),
             num_classes=(int(model["num_classes"]) if model.get("num_classes") is not None else None),
         ),
         calibration=CalibrationConfig(
             provider=str(calibration["provider"]),
             ndjson=_path(base, calibration.get("ndjson")),
-            images_root=_path(base, calibration["images_root"]),  # type: ignore[arg-type]
+            image_list=_path(base, calibration.get("image_list")),
+            images_root=_path(base, calibration.get("images_root")),
             split=str(calibration.get("split", "train")),
             count=count,
             seed=int(calibration.get("seed", 42)),

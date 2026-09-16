@@ -193,6 +193,7 @@ def load_yolo_adapter(
     weights: str | Path,
     *,
     input_size: int | Sequence[int] | None,
+    pose_output: str = "split",
 ) -> LoadedAdapter:
     from ultralytics import YOLO
 
@@ -207,6 +208,8 @@ def load_yolo_adapter(
     head.dynamic = False
     head.format = "torchscript"
     task = str(model.args.get("task", "unknown"))
+    if pose_output not in {"packed", "split"}:
+        raise ValueError("pose_output must be 'packed' or 'split'")
     keypoint_shape = list(getattr(head, "kpt_shape", []))
     keypoint_count = int(keypoint_shape[0]) if len(keypoint_shape) == 2 else 0
     keypoint_dims = int(keypoint_shape[1]) if len(keypoint_shape) == 2 else 0
@@ -218,7 +221,8 @@ def load_yolo_adapter(
     )
     with torch.inference_mode():
         source_output = _unwrap_tensor_output(model(example))
-    if task == "pose" and keypoint_count > 0:
+    split_pose = task == "pose" and keypoint_count > 0 and pose_output == "split"
+    if split_pose:
         model.model[-1] = _YoloPoseFieldHead(head).eval()
         wrapped = model.eval().to(memory_format=torch.channels_last)
     else:
@@ -241,10 +245,11 @@ def load_yolo_adapter(
             "stride": stride,
             "num_classes": int(getattr(head, "nc", 0)),
             "keypoint_shape": keypoint_shape,
+            "pose_output": pose_output if task == "pose" else None,
             "source_output_shape": list(source_output.shape),
             "output_names": (
                 pose_output_names
-                if task == "pose" and keypoint_count > 0
+                if split_pose
                 else ["output"]
             ),
             "output_shapes": [list(value.shape) for value in output_tensors],
@@ -295,9 +300,12 @@ def load_adapter(
     *,
     input_size: int | Sequence[int] | None,
     num_classes: int | None = None,
+    pose_output: str = "split",
 ) -> LoadedAdapter:
     if adapter == "ultralytics_yolo":
-        return load_yolo_adapter(weights, input_size=input_size)
+        return load_yolo_adapter(
+            weights, input_size=input_size, pose_output=pose_output
+        )
     if adapter == "torchvision_mobilenet_v2":
         return load_mobilenet_v2_adapter(
             weights, input_size=input_size, num_classes=num_classes
